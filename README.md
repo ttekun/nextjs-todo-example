@@ -107,14 +107,14 @@ CREATE TABLE todos (
 TypeScriptの型定義は以下のように実装されています：
 
 ```typescript
-// Todo型
+// Todo type
 export interface Todo {
   id: number;
   text: string;
   done: boolean;
 }
 
-// ストレージサービスのインターフェース
+// Storage service interface
 export interface StorageService {
   initialize: () => Promise<void>;
   getAllTodos: () => Promise<Todo[]>;
@@ -125,10 +125,6 @@ export interface StorageService {
 }
 ```
 
-## パフォーマンスについて
+## Performance
 
-duck-WASMは初回ロード時にWebAssemblyモジュールをロードするため、やや時間がかかる場合があります。しかし、一度ロードされると、その後の操作はスムーズに行われます。
-
-## ライセンス
-
-MIT 
+duck-WASM may take some time to load initially because it loads WebAssembly modules. However, once loaded, subsequent operations run smoothly.

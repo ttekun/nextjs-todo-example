@@ -13,11 +13,11 @@ const TodoAppComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
 
-  // duck-WASMストレージのインスタンスを取得
+  // Get duck-WASM storage instance
   const storage = getDuckDbStorage();
 
   useEffect(() => {
-    // duck-WASMからTODOを読み込む
+    // Load TODOs from duck-WASM
     const loadTodos = async (): Promise<void> => {
       try {
         await storage.initialize();
@@ -26,14 +26,14 @@ const TodoAppComponent: React.FC = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to load todos:", error);
-        setError("データの読み込みに失敗しました。");
+        setError("Failed to load data.");
         setIsLoading(false);
       }
     };
 
     loadTodos();
 
-    // クリーンアップ関数
+    // Cleanup function
     return () => {
       storage.close().catch(console.error);
     };
@@ -48,7 +48,7 @@ const TodoAppComponent: React.FC = () => {
 
     // Input validation
     if (input.trim().length > MAX_TODO_LENGTH) {
-      setOperationError(`TODOは${MAX_TODO_LENGTH}文字以内で入力してください。`);
+      setOperationError(`TODO must be within ${MAX_TODO_LENGTH} characters.`);
       return;
     }
 
@@ -63,11 +63,11 @@ const TodoAppComponent: React.FC = () => {
         setInput("");
         clearOperationError();
       } else {
-        setOperationError("TODOの追加に失敗しました。");
+        setOperationError("Failed to add TODO.");
       }
     } catch (error) {
       console.error("Failed to add todo:", error);
-      setOperationError("TODOの追加に失敗しました。");
+      setOperationError("Failed to add TODO.");
     }
   };
 
@@ -79,11 +79,11 @@ const TodoAppComponent: React.FC = () => {
         setTodos(newTodos);
         clearOperationError();
       } else {
-        setOperationError("TODOの削除に失敗しました。");
+        setOperationError("Failed to delete TODO.");
       }
     } catch (error) {
       console.error("Failed to delete todo:", error);
-      setOperationError("TODOの削除に失敗しました。");
+      setOperationError("Failed to delete TODO.");
     }
   };
 
@@ -105,26 +105,26 @@ const TodoAppComponent: React.FC = () => {
         setTodos(newTodos);
         clearOperationError();
       } else {
-        setOperationError("TODOの状態変更に失敗しました。");
+        setOperationError("Failed to change TODO status.");
       }
     } catch (error) {
       console.error("Failed to toggle todo:", error);
-      setOperationError("TODOの状態変更に失敗しました。");
+      setOperationError("Failed to change TODO status.");
     }
   };
 
-  // 編集開始
+  // Start editing
   const startEditing = (id: number, text: string): void => {
     setEditingId(id);
     setEditInput(text);
     clearOperationError();
   };
 
-  // 編集保存
+  // Save edit
   const saveEdit = async (id: number): Promise<void> => {
     // Input validation
     if (editInput.trim().length > MAX_TODO_LENGTH) {
-      setOperationError(`TODOは${MAX_TODO_LENGTH}文字以内で入力してください。`);
+      setOperationError(`TODO must be within ${MAX_TODO_LENGTH} characters.`);
       return;
     }
 
@@ -147,11 +147,11 @@ const TodoAppComponent: React.FC = () => {
         setEditInput("");
         clearOperationError();
       } else {
-        setOperationError("TODOの編集に失敗しました。");
+        setOperationError("Failed to edit TODO.");
       }
     } catch (error) {
       console.error("Failed to save edit:", error);
-      setOperationError("TODOの編集に失敗しました。");
+      setOperationError("Failed to edit TODO.");
     }
   };
 

@@ -5,20 +5,20 @@ describe('DuckDbStorageService', () => {
   let storage: ReturnType<typeof getDuckDbStorage>;
   
   beforeEach(() => {
-    // テスト前にストレージサービスを初期化
+    // Initialize storage service before each test
     storage = getDuckDbStorage();
   });
   
   afterEach(() => {
-    // テスト後にクリーンアップ
+    // Cleanup after each test
     jest.clearAllMocks();
   });
   
-  test('initialize()が正常に動作すること', async () => {
+  test('initialize() should work correctly', async () => {
     await expect(storage.initialize()).resolves.not.toThrow();
   });
   
-  test('getAllTodos()が正しくTODOリストを返すこと', async () => {
+  test('getAllTodos() should return correct TODO list', async () => {
     await storage.initialize();
     const todos = await storage.getAllTodos();
     
@@ -32,7 +32,7 @@ describe('DuckDbStorageService', () => {
     expect(todos[1]).toHaveProperty('done', true);
   });
   
-  test('addTodo()が正常に動作すること', async () => {
+  test('addTodo() should work correctly', async () => {
     await storage.initialize();
     
     const newTodo: Todo = {
@@ -45,14 +45,14 @@ describe('DuckDbStorageService', () => {
     expect(result).toBe(true);
   });
   
-  test('deleteTodo()が正常に動作すること', async () => {
+  test('deleteTodo() should work correctly', async () => {
     await storage.initialize();
     
     const result = await storage.deleteTodo(1);
     expect(result).toBe(true);
   });
   
-  test('updateTodo()が正常に動作すること', async () => {
+  test('updateTodo() should work correctly', async () => {
     await storage.initialize();
     
     const updatedTodo: Todo = {
@@ -65,7 +65,7 @@ describe('DuckDbStorageService', () => {
     expect(result).toBe(true);
   });
   
-  test('close()が正常に動作すること', async () => {
+  test('close() should work correctly', async () => {
     await storage.initialize();
     await expect(storage.close()).resolves.not.toThrow();
   });

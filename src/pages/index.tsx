@@ -1,7 +1,7 @@
 import React from "react";
 import dynamic from 'next/dynamic';
 
-// サーバーサイドレンダリングを無効化したTODOアプリコンポーネント
+// TODO app component with server-side rendering disabled
 const TodoAppWithNoSSR = dynamic(
   () => import('../components/TodoAppComponent'),
   { ssr: false }

@@ -1,6 +1,6 @@
 import { Todo, StorageService } from '../types/todo';
 
-// duck-WASMはクライアントサイドでのみインポート
+// Import duck-WASM only on client side
 let duckdb: any;
 if (typeof window !== 'undefined') {
   try {
@@ -24,7 +24,7 @@ class DuckDbStorageService implements StorageService {
   }
 
   async initialize(): Promise<void> {
-    // サーバーサイドレンダリング時は何もしない
+    // Do nothing during server-side rendering
     if (typeof window === 'undefined') {
       return;
     }
@@ -40,13 +40,13 @@ class DuckDbStorageService implements StorageService {
 
     this.initPromise = (async () => {
       try {
-        // ローカルにあるWASMファイルを指定
+        // Specify local WASM files
         const DUCKDB_CONFIG = {
           mainModule: window.location.origin + '/duckdb-wasm/duckdb-eh.wasm',
           mainWorker: window.location.origin + '/duckdb-wasm/duckdb-browser-eh.worker.js'
         };
 
-        // データベースの作成
+        // Create database
         const logger = new duckdb.ConsoleLogger();
         const worker = new Worker(DUCKDB_CONFIG.mainWorker);
         this.db = new duckdb.AsyncDuckDB(logger, worker);
@@ -159,12 +159,12 @@ class DuckDbStorageService implements StorageService {
   }
 }
 
-// シングルトンインスタンスを作成
+// Create singleton instance
 let instance: DuckDbStorageService | null = null;
 
 export function getDuckDbStorage(): StorageService {
   if (typeof window === 'undefined') {
-    // サーバーサイドレンダリングの場合は空のオブジェクトを返す
+    // Return empty object for server-side rendering
     return {
       initialize: () => Promise.resolve(),
       getAllTodos: () => Promise.resolve([]),
