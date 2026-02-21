@@ -1,18 +1,18 @@
-# Next.js TODOアプリ（duck-WASM版）
+# Next.js TODO App (DuckDB-WASM Version)
 
-このプロジェクトは、Next.jsを使用したシンプルなTODOアプリです。データ保存にduck-WASMを使用しています。
+This project is a simple TODO application built with Next.js. It uses DuckDB-WASM for data storage.
 
-## 特徴
+## Features
 
-- Next.jsによるシンプルなTODOアプリ
-- データストレージにduck-WASM（WebAssemblyで動作するDuckDB）を使用
-- ブラウザ内でSQLデータベースとして動作
-- モダンなUI/UX
-- レスポンシブデザイン（スマートフォン対応）
-- TypeScriptによる型安全性
-- Jestによるユニットテスト
+- Simple TODO application built with Next.js
+- DuckDB-WASM (DuckDB running on WebAssembly) for data storage
+- Runs as an in-browser SQL database
+- Modern UI/UX
+- Responsive design (mobile-friendly)
+- Type safety with TypeScript
+- Unit testing with Jest
 
-## 使用技術
+## Tech Stack
 
 - Next.js
 - React
@@ -21,48 +21,48 @@
 - SQL
 - Jest & Testing Library
 
-## インストール方法
+## Installation
 
 ```bash
-# リポジトリをクローン
+# Clone the repository
 git clone https://github.com/ttekun/nextjs-todo-example.git
 
-# ディレクトリに移動
+# Navigate to the directory
 cd nextjs-todo-example
 
-# 依存関係をインストール
+# Install dependencies
 npm install
 
-# DuckDB-WASMファイルをセットアップ
+# Setup DuckDB-WASM files
 npm run setup
 
-# 開発サーバーを起動（自動的にsetupスクリプトも実行されます）
+# Start the development server (setup script runs automatically)
 npm run dev
 ```
 
-このように設定すると：
+With this setup:
 
-1. `public/duckdb-wasm`ディレクトリはGitHubにプッシュされません
-2. `npm run setup`で必要なWASMファイルがダウンロードされます
-3. `npm run dev`を実行すると自動的にセットアップスクリプトが走ります
+1. The `public/duckdb-wasm` directory is not pushed to GitHub
+2. Required WASM files are downloaded via `npm run setup`
+3. The setup script runs automatically when executing `npm run dev`
 
-この方法でリポジトリサイズを小さく保ちつつ、開発者が簡単にプロジェクトを始められるようになります。
+This approach keeps the repository size small while making it easy for developers to get started.
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開いてアプリケーションを使用します。
+Open [http://localhost:3000](http://localhost:3000) in your browser to use the application.
 
-## テスト実行方法
+## Running Tests
 
 ```bash
-# すべてのテストを実行
+# Run all tests
 npm test
 
-# ウォッチモードでテストを実行（開発時に便利）
+# Run tests in watch mode (useful during development)
 npm run test:watch
 ```
 
-## データ構造
+## Data Structure
 
-TODOデータは以下のSQLテーブル構造で保存されています：
+TODO data is stored with the following SQL table structure:
 
 ```sql
 CREATE TABLE todos (
@@ -72,39 +72,39 @@ CREATE TABLE todos (
 );
 ```
 
-## 機能
+## Features
 
-- TODOの追加
-- TODOの削除
-- TODOの編集
-- TODOの完了/未完了の切り替え
+- Add TODO items
+- Delete TODO items
+- Edit TODO items
+- Toggle TODO completion status
 
-## プロジェクト構造
+## Project Structure
 
 ```
 /
-├── src/                # ソースコードのルートディレクトリ
-│   ├── pages/          # Next.jsのルーティング用ページ
-│   ├── components/     # 再利用可能なUIコンポーネント
-│   ├── services/       # データストレージなどのサービス
-│   └── types/          # TypeScriptの型定義
-├── public/             # 静的ファイル
-├── docs/               # プロジェクトのドキュメント
-└── __tests__/          # テストファイル
+├── src/                # Source code root directory
+│   ├── pages/          # Next.js routing pages
+│   ├── components/     # Reusable UI components
+│   ├── services/       # Services like data storage
+│   └── types/          # TypeScript type definitions
+├── public/             # Static files
+├── docs/               # Project documentation
+└── __tests__/          # Test files
 ```
 
-## ドキュメント
+## Documentation
 
-プロジェクトに関する詳細なドキュメントは以下のファイルを参照してください：
+For detailed documentation about the project, refer to the following files:
 
-- [アーキテクチャ概要](docs/duck-wasm-schema.md) - アプリケーションの基本構造とデータフロー
-- [TypeScriptとNext.js学習ガイド](docs/typescript-nextjs-learning-guide.md) - TypeScriptとNext.jsの基本的な概念の解説
-- [アーキテクチャスキーマ](docs/typescript-nextjs-schema.md) - プロジェクトのアーキテクチャをビジュアルで理解するためのMermaid図
-- [トラブルシューティングガイド](docs/troubleshooting-guide.md) - 発生する可能性のある問題と解決策
+- [Architecture Overview](docs/duck-wasm-schema.md) - Application structure and data flow
+- [TypeScript and Next.js Learning Guide](docs/typescript-nextjs-learning-guide.md) - Basic concepts of TypeScript and Next.js
+- [Architecture Schema](docs/typescript-nextjs-schema.md) - Mermaid diagrams to visually understand the project architecture
+- [Troubleshooting Guide](docs/troubleshooting-guide.md) - Potential issues and solutions
 
-## 型定義
+## Type Definitions
 
-TypeScriptの型定義は以下のように実装されています：
+TypeScript type definitions are implemented as follows:
 
 ```typescript
 // Todo type
@@ -127,4 +127,4 @@ export interface StorageService {
 
 ## Performance
 
-duck-WASM may take some time to load initially because it loads WebAssembly modules. However, once loaded, subsequent operations run smoothly.
+DuckDB-WASM may take some time to load initially because it loads WebAssembly modules. However, once loaded, subsequent operations run smoothly.

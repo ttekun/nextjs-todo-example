@@ -1,306 +1,306 @@
-# TypeScriptとNext.jsのTODOアプリのトラブルシューティングガイド
+# TypeScript and Next.js TODO App Troubleshooting Guide
 
-このドキュメントでは、duck-WASMを使用したTODOアプリで発生する可能性のある問題と、その解決策を説明します。
+This document explains potential problems that may occur in the TODO app using DuckDB-WASM and their solutions.
 
-## 発生する可能性のある問題
+## Potential Problems
 
-### 1. duck-WASM初期化の失敗
+### 1. DuckDB-WASM Initialization Failure
 
-**症状**:
-- アプリケーションが読み込まれるが、TODOが表示されない
-- コンソールに「duck-WASM初期化失敗」のエラーが表示される
+**Symptoms**:
+- Application loads but TODOs are not displayed
+- "DuckDB-WASM initialization failed" error appears in console
 
-**原因**:
-- ブラウザの互換性問題
-- WebAssemblyのサポート不足
-- メモリ制限
-- WASMモジュールのロード失敗
-- パス指定の誤り
+**Causes**:
+- Browser compatibility issues
+- Insufficient WebAssembly support
+- Memory limitations
+- WASM module loading failure
+- Incorrect path specification
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// DuckDbStorageService.initialize() 内
-console.log("duck-WASM初期化開始");
+// Inside DuckDbStorageService.initialize()
+console.log("DuckDB-WASM initialization started");
 try {
-  // 現在のブラウザ情報を記録
-  console.log("ブラウザ情報:", window.navigator.userAgent);
-  console.log("WASMパス設定:", DUCKDB_CONFIG);
-  
-  // 初期化コード
+  // Log current browser information
+  console.log("Browser info:", window.navigator.userAgent);
+  console.log("WASM path config:", DUCKDB_CONFIG);
+
+  // Initialization code
   // ...
-  
-  console.log("duck-WASM初期化成功");
+
+  console.log("DuckDB-WASM initialization successful");
 } catch (error) {
-  console.error("duck-WASM初期化失敗:", error);
+  console.error("DuckDB-WASM initialization failed:", error);
 }
 ```
 
-### 2. 非同期処理のハンドリング不足
+### 2. Insufficient Async Handling
 
-**症状**:
-- データ操作後に画面が更新されない
-- レース条件によるデータの不整合
-- 「Unhandled Promise Rejection」エラー
+**Symptoms**:
+- Screen doesn't update after data operations
+- Data inconsistency due to race conditions
+- "Unhandled Promise Rejection" errors
 
-**原因**:
-- Promiseのハンドリング不足
-- 非同期処理の順序の問題
-- エラーキャッチの欠如
+**Causes**:
+- Insufficient Promise handling
+- Async operation order issues
+- Missing error catches
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// async関数の実行順序を確認
+// Check async function execution order
 async function operationWithLogging(operation, ...args) {
-  console.log(`${operation}開始:`, ...args);
+  console.log(`${operation} started:`, ...args);
   try {
     const result = await operation(...args);
-    console.log(`${operation}成功:`, result);
+    console.log(`${operation} successful:`, result);
     return result;
   } catch (error) {
-    console.error(`${operation}失敗:`, error);
+    console.error(`${operation} failed:`, error);
     throw error;
   }
 }
 
-// 例: getAllTodos関数をラップ
+// Example: Wrap getAllTodos function
 const todos = await operationWithLogging(storage.getAllTodos);
 ```
 
-### 3. SQLクエリのエラー
+### 3. SQL Query Errors
 
-**症状**:
-- データが保存・更新されない
-- クエリエラーがコンソールに表示される
+**Symptoms**:
+- Data is not saved or updated
+- Query errors appear in console
 
-**原因**:
-- SQL構文エラー
-- テーブルスキーマの不一致
-- 制約違反
+**Causes**:
+- SQL syntax errors
+- Table schema mismatch
+- Constraint violations
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// クエリ実行をラップする関数
+// Function to wrap query execution
 async function executeQueryWithLogging(conn, query, params = []) {
-  console.log("SQL実行:", query, params);
+  console.log("SQL execution:", query, params);
   try {
     const result = await conn.query(query, params);
-    console.log("SQL成功:", result);
+    console.log("SQL successful:", result);
     return result;
   } catch (error) {
-    console.error("SQLエラー:", error, "クエリ:", query, "パラメータ:", params);
+    console.error("SQL error:", error, "Query:", query, "Parameters:", params);
     throw error;
   }
 }
 
-// 使用例
+// Usage example
 const result = await executeQueryWithLogging(
-  this.conn, 
+  this.conn,
   "INSERT INTO todos (id, text, done) VALUES (?, ?, ?)",
   [todo.id, todo.text, todo.done]
 );
 ```
 
-### 4. WebAssemblyモジュールのロード失敗
+### 4. WebAssembly Module Loading Failure
 
-**症状**:
-- 「Cannot find module」または「Failed to fetch」エラー
-- WASMファイルが見つからないエラー
+**Symptoms**:
+- "Cannot find module" or "Failed to fetch" errors
+- WASM file not found errors
 
-**原因**:
-- パスの設定ミス
-- CORSの問題
-- ファイルの欠落
+**Causes**:
+- Path configuration mistakes
+- CORS issues
+- Missing files
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// WASMモジュールのロード前
-console.log("WASMモジュールロード開始:");
-console.log("- メインモジュールパス:", DUCKDB_CONFIG.mainModule);
-console.log("- ワーカーパス:", DUCKDB_CONFIG.mainWorker);
+// Before WASM module loading
+console.log("WASM module loading started:");
+console.log("- Main module path:", DUCKDB_CONFIG.mainModule);
+console.log("- Worker path:", DUCKDB_CONFIG.mainWorker);
 
-// ファイルの存在確認（開発時のみ）
+// File existence check (development only)
 fetch(DUCKDB_CONFIG.mainModule)
   .then(response => {
-    console.log("メインモジュールの存在確認:", response.status);
+    console.log("Main module existence check:", response.status);
   })
   .catch(error => {
-    console.error("メインモジュールの取得失敗:", error);
+    console.error("Main module fetch failed:", error);
   });
 
 fetch(DUCKDB_CONFIG.mainWorker)
   .then(response => {
-    console.log("ワーカーの存在確認:", response.status);
+    console.log("Worker existence check:", response.status);
   })
   .catch(error => {
-    console.error("ワーカーの取得失敗:", error);
+    console.error("Worker fetch failed:", error);
   });
 ```
 
-### 5. パフォーマンス低下
+### 5. Performance Degradation
 
-**症状**:
-- 初回ロード時間が長い
-- 操作のレスポンスが遅い
-- メモリ使用量の増加
+**Symptoms**:
+- Long initial load time
+- Slow operation response
+- Increased memory usage
 
-**原因**:
-- WebAssemblyモジュールのロード時間
-- 非効率なクエリ
-- メモリリーク
+**Causes**:
+- WebAssembly module load time
+- Inefficient queries
+- Memory leaks
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// パフォーマンス測定
+// Performance measurement
 console.time("operation-time");
-// 操作実行
+// Execute operation
 console.timeEnd("operation-time");
 
-// メモリ使用量（開発時のみ）
-console.log("メモリ使用量:", 
-  performance.memory ? 
-    `${Math.round(performance.memory.usedJSHeapSize / (1024 * 1024))}MB` : 
-    "測定不可"
+// Memory usage (development only)
+console.log("Memory usage:",
+  performance.memory ?
+    `${Math.round(performance.memory.usedJSHeapSize / (1024 * 1024))}MB` :
+    "Not measurable"
 );
 ```
 
-### 6. ブラウザのシークレットモードなどでの動作不良
+### 6. Browser Incognito Mode Issues
 
-**症状**:
-- プライベートブラウジングモードでデータが保存されない
-- 一部ブラウザでの動作不良
+**Symptoms**:
+- Data not saved in private browsing mode
+- Malfunction in certain browsers
 
-**原因**:
-- ストレージ制限
-- サードパーティCookieのブロック
-- セキュリティポリシー
+**Causes**:
+- Storage limitations
+- Third-party cookie blocking
+- Security policies
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// ブラウザモードの検出（完全には不可能）
-console.log("プライベートモード検出試行:");
+// Browser mode detection (not completely possible)
+console.log("Private mode detection attempt:");
 try {
   localStorage.setItem("test", "test");
   localStorage.removeItem("test");
-  console.log("- localStorage: 利用可能");
+  console.log("- localStorage: Available");
 } catch (e) {
-  console.log("- localStorage: 利用不可");
+  console.log("- localStorage: Unavailable");
 }
 
-// IndexedDBの可用性確認
+// IndexedDB availability check
 const checkIndexedDB = () => {
   try {
     const request = indexedDB.open("test", 1);
     request.onsuccess = () => {
-      console.log("- IndexedDB: 利用可能");
+      console.log("- IndexedDB: Available");
       request.result.close();
       indexedDB.deleteDatabase("test");
     };
     request.onerror = () => {
-      console.log("- IndexedDB: 利用不可");
+      console.log("- IndexedDB: Unavailable");
     };
   } catch (e) {
-    console.log("- IndexedDB: 例外発生", e);
+    console.log("- IndexedDB: Exception occurred", e);
   }
 };
 checkIndexedDB();
 ```
 
-### 7. ブラウザ互換性の問題
+### 7. Browser Compatibility Issues
 
-**症状**:
-- 特定のブラウザでアプリが動作しない
-- 古いブラウザでのエラー
+**Symptoms**:
+- App doesn't work in specific browsers
+- Errors in older browsers
 
-**原因**:
-- WebAssemblyの未サポート
-- モダンJavaScript機能の未サポート
-- CSSの互換性問題
+**Causes**:
+- WebAssembly not supported
+- Modern JavaScript features not supported
+- CSS compatibility issues
 
-**検証のためのログ**:
+**Logs for Verification**:
 ```typescript
-// ブラウザ機能の検出
-console.log("ブラウザ互換性チェック:");
-console.log("- WebAssembly:", typeof WebAssembly !== "undefined" ? "サポート" : "未サポート");
-console.log("- Async/Await:", typeof (async () => {}).constructor === "AsyncFunction" ? "サポート" : "未サポート");
-console.log("- ES Modules:", "noModule" in document.createElement("script") ? "サポート" : "未サポート");
+// Browser feature detection
+console.log("Browser compatibility check:");
+console.log("- WebAssembly:", typeof WebAssembly !== "undefined" ? "Supported" : "Not supported");
+console.log("- Async/Await:", typeof (async () => {}).constructor === "AsyncFunction" ? "Supported" : "Not supported");
+console.log("- ES Modules:", "noModule" in document.createElement("script") ? "Supported" : "Not supported");
 ```
 
-## 最も可能性の高い問題と検証手順
+## Most Likely Problems and Verification Procedures
 
-duck-WASM TODOアプリで最も発生する可能性が高いのは、以下の2つの問題です：
+The two most likely problems in the DuckDB-WASM TODO app are:
 
-1. **duck-WASM初期化の失敗**
-2. **WebAssemblyモジュールのロード失敗**
+1. **DuckDB-WASM Initialization Failure**
+2. **WebAssembly Module Loading Failure**
 
-これらの問題を検証するための具体的な手順は次の通りです：
+Here are the specific steps to verify these issues:
 
-### 1. 詳細なロギングの追加
+### 1. Adding Detailed Logging
 
 ```typescript
-// pages/duckDbStorage.ts内のinitialize()メソッドに追加
+// Add to initialize() method in pages/duckDbStorage.ts
 
 async initialize(): Promise<void> {
-  // サーバーサイドレンダリング時は何もしない
+  // Do nothing during server-side rendering
   if (typeof window === 'undefined') {
-    console.log("サーバーサイドではduck-WASMを初期化しません");
+    console.log("DuckDB-WASM will not be initialized on server-side");
     return;
   }
 
   if (this.initialized) {
-    console.log("duck-WASMは既に初期化されています");
+    console.log("DuckDB-WASM is already initialized");
     return;
   }
 
   if (this.initPromise) {
-    console.log("duck-WASM初期化は既に進行中です");
+    console.log("DuckDB-WASM initialization already in progress");
     await this.initPromise;
     return;
   }
 
-  console.log("duck-WASM初期化開始");
-  console.log("ブラウザ情報:", window.navigator.userAgent);
-  console.log("WebAssemblyサポート:", typeof WebAssembly !== "undefined" ? "あり" : "なし");
-  
+  console.log("DuckDB-WASM initialization started");
+  console.log("Browser info:", window.navigator.userAgent);
+  console.log("WebAssembly support:", typeof WebAssembly !== "undefined" ? "Yes" : "No");
+
   this.initPromise = (async () => {
     try {
-      // ローカルにあるWASMファイルを指定
+      // Specify local WASM files
       const DUCKDB_CONFIG = {
         mainModule: '/duckdb-wasm/duckdb-eh.wasm',
         mainWorker: '/duckdb-wasm/duckdb-browser-eh.worker.js'
       };
-      console.log("WASM設定:", DUCKDB_CONFIG);
-      
-      // モジュールの存在確認
+      console.log("WASM config:", DUCKDB_CONFIG);
+
+      // Module existence check
       try {
         const moduleCheck = await fetch(DUCKDB_CONFIG.mainModule, { method: 'HEAD' });
-        console.log("メインモジュール存在確認:", moduleCheck.status);
-        
+        console.log("Main module existence check:", moduleCheck.status);
+
         const workerCheck = await fetch(DUCKDB_CONFIG.mainWorker, { method: 'HEAD' });
-        console.log("ワーカー存在確認:", workerCheck.status);
+        console.log("Worker existence check:", workerCheck.status);
       } catch (fetchError) {
-        console.error("WASMファイル確認エラー:", fetchError);
+        console.error("WASM file check error:", fetchError);
       }
 
-      // データベースの作成
-      console.log("DuckDB作成開始");
+      // Create database
+      console.log("DuckDB creation started");
       const logger = new duckdb.ConsoleLogger();
       const worker = new Worker(DUCKDB_CONFIG.mainWorker);
-      console.log("Workerインスタンス作成完了");
-      
+      console.log("Worker instance created");
+
       this.db = new duckdb.AsyncDuckDB(logger, worker);
-      console.log("AsyncDuckDBインスタンス作成完了");
-      
+      console.log("AsyncDuckDB instance created");
+
       console.time("wasm-instantiate");
       await this.db.instantiate(DUCKDB_CONFIG.mainModule);
       console.timeEnd("wasm-instantiate");
-      console.log("DuckDBインスタンス化完了");
-      
+      console.log("DuckDB instantiation complete");
+
       console.time("connection-open");
       this.conn = await this.db.connect();
       console.timeEnd("connection-open");
-      console.log("接続確立完了");
-      
-      // テーブル作成
+      console.log("Connection established");
+
+      // Create table
       console.time("table-create");
       await this.conn.query(`
         CREATE TABLE IF NOT EXISTS todos (
@@ -310,14 +310,14 @@ async initialize(): Promise<void> {
         )
       `);
       console.timeEnd("table-create");
-      console.log("テーブル作成完了");
-      
+      console.log("Table created");
+
       this.initialized = true;
-      console.log("duck-WASM初期化成功");
+      console.log("DuckDB-WASM initialization successful");
       return this.db;
     } catch (error) {
-      console.error("duck-WASM初期化失敗:", error);
-      console.error("エラーの詳細:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      console.error("DuckDB-WASM initialization failed:", error);
+      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       throw error;
     }
   })();
@@ -326,27 +326,27 @@ async initialize(): Promise<void> {
 }
 ```
 
-### 2. 問題の特定と修正
+### 2. Problem Identification and Fix
 
-詳細なログを追加した後、以下のようなトラブルシューティング手順を実施することをお勧めします：
+After adding detailed logs, it is recommended to follow these troubleshooting steps:
 
-1. **ブラウザの開発者コンソールを開く**
-   - F12キーまたは右クリック→「検査」を選択
+1. **Open browser developer console**
+   - Press F12 or right-click → "Inspect"
 
-2. **アプリの再読み込みを行い、ログを確認**
-   - WASMファイルの読み込みに関するエラーが表示されるか
-   - 初期化プロセスのどの段階で失敗するか
+2. **Reload the app and check logs**
+   - Check if there are errors related to WASM file loading
+   - Identify which stage of initialization fails
 
-3. **ネットワークタブでファイルのロードを確認**
-   - `/duckdb-wasm/duckdb-eh.wasm`と`/duckdb-wasm/duckdb-browser-eh.worker.js`がロードされているか
-   - 404エラーが表示されていないか
+3. **Check file loading in Network tab**
+   - Verify if `/duckdb-wasm/duckdb-eh.wasm` and `/duckdb-wasm/duckdb-browser-eh.worker.js` are loaded
+   - Check if 404 errors are displayed
 
-4. **エラーメッセージに基づいて対応**
-   - ファイルが見つからない場合：パスの修正またはファイルの配置を確認
-   - WebAssembly未サポートの場合：互換性のあるブラウザの使用を促す
-   - メモリ制限の場合：アプリケーションの最適化を検討
+4. **Respond based on error messages**
+   - If file not found: Fix path or verify file placement
+   - If WebAssembly not supported: Recommend using a compatible browser
+   - If memory limitation: Consider application optimization
 
-5. **簡易的なストレージへのフォールバック実装**
-   - duck-WASMが初期化できない場合は、localStorage等のシンプルなストレージに切り替え
+5. **Implement fallback to simple storage**
+   - Switch to localStorage or similar simple storage if DuckDB-WASM cannot be initialized
 
-この手順で特定された問題に基づいて、アプリケーションのロバスト性を高めることができます。 
+By following these steps, you can improve the robustness of the application based on identified issues.

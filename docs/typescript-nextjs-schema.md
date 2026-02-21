@@ -1,17 +1,17 @@
-# TypeScriptとNext.jsアーキテクチャ
+# TypeScript and Next.js Architecture
 
-このドキュメントでは、TypeScriptとNext.jsを使用したTODOアプリのアーキテクチャ概要を説明します。
+This document explains the architecture overview of the TODO application built with TypeScript and Next.js.
 
-## 全体アーキテクチャ
+## Overall Architecture
 
 ```mermaid
 graph TD
-    A[クライアント] --> B[Next.jsアプリケーション]
-    B --> C[Reactコンポーネント]
-    C --> D[TypeScript型システム]
-    C --> E[duck-WASMストレージ]
-    E --> F[SQLデータベース]
-    
+    A[Client] --> B[Next.js Application]
+    B --> C[React Components]
+    C --> D[TypeScript Type System]
+    C --> E[DuckDB-WASM Storage]
+    E --> F[SQL Database]
+
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style B fill:#bbf,stroke:#333,stroke-width:2px
     style C fill:#bfb,stroke:#333,stroke-width:2px
@@ -20,23 +20,23 @@ graph TD
     style F fill:#ffb,stroke:#333,stroke-width:2px
 ```
 
-## コンポーネント構成
+## Component Structure
 
 ```mermaid
 graph TD
     A[pages/index.tsx] --> B[TodoAppComponent]
-    B --> C[Reactフック]
+    B --> C[React Hooks]
     C --> D[useState]
     C --> E[useEffect]
-    B --> F[TODOアイテム表示]
-    B --> G[CRUD操作]
-    G --> H[追加]
-    G --> I[削除]
-    G --> J[更新]
-    G --> K[完了切替]
+    B --> F[TODO Item Display]
+    B --> G[CRUD Operations]
+    G --> H[Add]
+    G --> I[Delete]
+    G --> J[Update]
+    G --> K[Toggle Complete]
     B --> L[DuckDbStorageService]
-    L --> M[duck-WASM]
-    M --> N[SQLクエリ実行]
+    L --> M[DuckDB-WASM]
+    M --> N[SQL Query Execution]
 
     style A fill:#bbf,stroke:#333,stroke-width:2px
     style B fill:#bfb,stroke:#333,stroke-width:2px
@@ -45,27 +45,27 @@ graph TD
     style N fill:#ffb,stroke:#333,stroke-width:2px
 ```
 
-## データフロー
+## Data Flow
 
 ```mermaid
 sequenceDiagram
-    participant User as ユーザー
-    participant UI as UIコンポーネント
-    participant Logic as ロジックレイヤー
+    participant User as User
+    participant UI as UI Component
+    participant Logic as Logic Layer
     participant Storage as DuckDbStorage
-    participant DB as SQLデータベース
-    
-    User->>UI: TODOの追加/編集/削除
-    UI->>Logic: アクション実行
-    Logic->>Storage: データ操作リクエスト
-    Storage->>DB: SQLクエリ実行
-    DB-->>Storage: クエリ結果
-    Storage-->>Logic: 操作結果
-    Logic-->>UI: 状態更新
-    UI-->>User: UI更新
+    participant DB as SQL Database
+
+    User->>UI: Add/Edit/Delete TODO
+    UI->>Logic: Execute Action
+    Logic->>Storage: Data Operation Request
+    Storage->>DB: Execute SQL Query
+    DB-->>Storage: Query Result
+    Storage-->>Logic: Operation Result
+    Logic-->>UI: State Update
+    UI-->>User: UI Update
 ```
 
-## 型システム
+## Type System
 
 ```mermaid
 classDiagram
@@ -74,7 +74,7 @@ classDiagram
         +string text
         +boolean done
     }
-    
+
     class StorageService {
         +initialize() Promise~void~
         +getAllTodos() Promise~Todo[]~
@@ -83,7 +83,7 @@ classDiagram
         +updateTodo(Todo) Promise~boolean~
         +close() Promise~void~
     }
-    
+
     class DuckDbStorageService {
         -any db
         -any conn
@@ -96,12 +96,12 @@ classDiagram
         +updateTodo(Todo) Promise~boolean~
         +close() Promise~void~
     }
-    
+
     StorageService <|.. DuckDbStorageService : implements
     DuckDbStorageService ..> Todo : uses
 ```
 
-## データベーススキーマ
+## Database Schema
 
 ```mermaid
 erDiagram
@@ -112,35 +112,35 @@ erDiagram
     }
 ```
 
-## 技術スタック概要
+## Technology Stack Overview
 
-| レイヤー | 使用技術 | 役割 |
-|----------|----------|------|
-| フロントエンド | React, TypeScript | UIの構築、型安全なコード |
-| アプリケーションフレームワーク | Next.js | ルーティング、SSR(無効化) |
-| データストレージ | duck-WASM (DuckDB) | ブラウザ内SQLデータベース |
-| テスト | Jest, Testing Library | ユニットテスト、コンポーネントテスト |
+| Layer | Technology | Role |
+|-------|------------|------|
+| Frontend | React, TypeScript | UI construction, type-safe code |
+| Application Framework | Next.js | Routing, SSR (disabled) |
+| Data Storage | DuckDB-WASM (DuckDB) | In-browser SQL database |
+| Testing | Jest, Testing Library | Unit tests, component tests |
 
-## 問題の可能性と解決策
+## Potential Problems and Solutions
 
-このアーキテクチャで発生する可能性がある問題と解決策：
+Problems that may occur with this architecture and their solutions:
 
-1. **duck-WASM初期化の失敗**
-   - 原因: ブラウザの互換性、メモリ制限
-   - 解決策: エラーハンドリングの強化、フォールバックストレージの実装
+1. **DuckDB-WASM Initialization Failure**
+   - Cause: Browser compatibility, memory limitations
+   - Solution: Enhanced error handling, fallback storage implementation
 
-2. **非同期処理のハンドリング不足**
-   - 原因: Promise処理の不適切な実装
-   - 解決策: async/awaitパターンの適切な使用、エラーハンドリング改善
+2. **Insufficient Async Handling**
+   - Cause: Improper Promise implementation
+   - Solution: Proper use of async/await pattern, improved error handling
 
-3. **SQLクエリのエラー**
-   - 原因: 構文ミス、トランザクション問題
-   - 解決策: クエリテスト、エラーログ強化
+3. **SQL Query Errors**
+   - Cause: Syntax mistakes, transaction issues
+   - Solution: Query testing, enhanced error logging
 
-4. **パフォーマンス問題**
-   - 原因: 頻繁なレンダリング、非効率なクエリ
-   - 解決策: メモ化、最適化されたクエリ
+4. **Performance Issues**
+   - Cause: Frequent rendering, inefficient queries
+   - Solution: Memoization, optimized queries
 
-5. **ブラウザストレージの制限**
-   - 原因: ローカルストレージの容量制限
-   - 解決策: データサイズの監視、不要データの削除 
+5. **Browser Storage Limitations**
+   - Cause: Local storage capacity limits
+   - Solution: Data size monitoring, removal of unnecessary data

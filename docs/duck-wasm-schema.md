@@ -1,24 +1,26 @@
-# TODOアプリのアーキテクチャ（duck-WASM版）
+# TODO App Architecture (DuckDB-WASM Version)
 
-このファイルでは、duck-WASMを使用したTODOアプリの基本的なスキーマと各コンポーネントの役割を示すマーメイド図を提供します。
+This file provides the basic schema and mermaid diagrams showing the role of each component in the DuckDB-WASM TODO application.
 
-## コンポーネント
-1. UIコンポーネント：ユーザーとのインターフェース。todo一覧、追加、削除、編集を担当。
-2. ストレージコンポーネント：duck-WASMを使用してブラウザ内でSQLデータベースとしてデータの保存を担当。
-3. ロジックコンポーネント：todo の追加、削除、編集のロジックを管理。
-4. レスポンシブデザイン：スマホブラウザ向けの CSS、メディアクエリによるデザイン対応。
+## Components
 
-## マーメイド図
+1. **UI Component**: Interface with users. Handles TODO list display, addition, deletion, and editing.
+2. **Storage Component**: Uses DuckDB-WASM to store data as an in-browser SQL database.
+3. **Logic Component**: Manages logic for TODO addition, deletion, and editing.
+4. **Responsive Design**: CSS for mobile browsers, design support with media queries.
+
+## Mermaid Diagram
 
 ```mermaid
 graph TD
-    A[UIコンポーネント] --> B[ロジックコンポーネント]
-    B --> C[duck-WASMストレージコンポーネント]
-    C --> D[SQLクエリハンドラー]
-    A --> E[レスポンシブデザイン]
+    A[UI Component] --> B[Logic Component]
+    B --> C[DuckDB-WASM Storage Component]
+    C --> D[SQL Query Handler]
+    A --> E[Responsive Design]
 ```
 
-## データ構造（SQL）
+## Data Structure (SQL)
+
 ```sql
 CREATE TABLE todos (
   id INTEGER PRIMARY KEY,
@@ -27,42 +29,47 @@ CREATE TABLE todos (
 );
 ```
 
-## ローカルWASMファイルの構成
-TODOアプリはCORSの問題を回避するために、duck-WASMのファイルをローカルで使用しています：
+## Local WASM File Configuration
 
-- `/public/duckdb-wasm/duckdb-eh.wasm` - DuckDBのWebAssemblyモジュール
-- `/public/duckdb-wasm/duckdb-browser-eh.worker.js` - DuckDBのワーカースクリプト
+The TODO app uses DuckDB-WASM files locally to avoid CORS issues:
 
-## 想定される問題の原因
-1. duck-WASM初期化の失敗（ブラウザの互換性、メモリ制限など）
-2. 非同期処理のハンドリング不足（duck-WASMはPromiseベースで動作）
-3. SQLクエリのエラー（構文ミスやトランザクション問題）
-4. WebAssemblyモジュールのロード失敗
-5. パフォーマンス低下（初回ロード時のオーバーヘッド）
-6. ブラウザのシークレットモードなどでの動作不良
+- `/public/duckdb-wasm/duckdb-eh.wasm` - DuckDB WebAssembly module
+- `/public/duckdb-wasm/duckdb-browser-eh.worker.js` - DuckDB worker script
 
-## 最も可能性が高い問題の原因
-1. duck-WASM初期化の失敗と非同期処理のハンドリング不足
-2. WebAssemblyのブラウザサポート問題
+## Potential Causes of Problems
 
-## 仮説検証のためのログ追加計画
-- duck-WASMの初期化プロセスと各SQLクエリ実行時に詳細なログを出力
-- 以下のテスト用コードを追加：
+1. DuckDB-WASM initialization failure (browser compatibility, memory limits, etc.)
+2. Insufficient async handling (DuckDB-WASM operates Promise-based)
+3. SQL query errors (syntax mistakes or transaction issues)
+4. WebAssembly module loading failure
+5. Performance degradation (overhead during initial load)
+6. Malfunction in browser incognito mode, etc.
+
+## Most Likely Causes of Problems
+
+1. DuckDB-WASM initialization failure and insufficient async handling
+2. WebAssembly browser support issues
+
+## Log Addition Plan for Hypothesis Verification
+
+- Output detailed logs during DuckDB-WASM initialization process and each SQL query execution
+- Add the following test code:
+
 ```javascript
-// duck-WASM初期化テスト
-console.log("duck-WASM初期化開始");
+// DuckDB-WASM initialization test
+console.log("DuckDB-WASM initialization started");
 try {
-  // duck-WASM初期化コード
-  console.log("duck-WASM初期化成功");
+  // DuckDB-WASM initialization code
+  console.log("DuckDB-WASM initialization successful");
 } catch (error) {
-  console.error("duck-WASM初期化失敗:", error);
+  console.error("DuckDB-WASM initialization failed:", error);
 }
 
-// データ操作テスト
+// Data operation test
 try {
-  // データ操作コード（INSERT/UPDATE/DELETE）
-  console.log("データ操作成功:", /* 操作内容 */);
+  // Data operation code (INSERT/UPDATE/DELETE)
+  console.log("Data operation successful:", /* operation details */);
 } catch (error) {
-  console.error("データ操作失敗:", error);
+  console.error("Data operation failed:", error);
 }
-``` 
+```

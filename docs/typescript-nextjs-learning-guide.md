@@ -1,44 +1,44 @@
-# TypeScriptとNext.js学習ガイド
+# TypeScript and Next.js Learning Guide
 
-このドキュメントは、SQLの経験はあるがTypeScriptとNext.jsの経験がないソフトウェアエンジニア向けの学習ガイドです。このTODOアプリプロジェクトを例に、TypeScriptとNext.jsの基本を説明します。
+This document is a learning guide for software engineers who have SQL experience but no TypeScript or Next.js experience. It explains the basics of TypeScript and Next.js using this TODO app project as an example.
 
-## 目次
+## Table of Contents
 
-1. [TypeScriptの基本](#typescript-の基本)
-2. [React入門](#react入門)
-3. [Next.jsフレームワーク](#nextjs-フレームワーク)
-4. [プロジェクト構造](#プロジェクト構造)
-5. [データの扱い方](#データの扱い方)
-6. [非同期処理](#非同期処理)
-7. [開発環境のセットアップ](#開発環境のセットアップ)
-8. [学習リソース](#学習リソース)
+1. [TypeScript Basics](#typescript-basics)
+2. [Introduction to React](#introduction-to-react)
+3. [Next.js Framework](#nextjs-framework)
+4. [Project Structure](#project-structure)
+5. [Handling Data](#handling-data)
+6. [Asynchronous Processing](#asynchronous-processing)
+7. [Development Environment Setup](#development-environment-setup)
+8. [Learning Resources](#learning-resources)
 
-## TypeScriptの基本
+## TypeScript Basics
 
-TypeScriptはJavaScriptのスーパーセットで、静的型付けを提供します。SQLに慣れていれば、型の概念は親しみやすいでしょう。
+TypeScript is a superset of JavaScript that provides static typing. If you're familiar with SQL, the concept of types should be intuitive.
 
-### 型定義の基本
+### Basic Type Definitions
 
 ```typescript
-// プリミティブ型
+// Primitive types
 let id: number = 1;
-let name: string = "タスク";
+let name: string = "Task";
 let completed: boolean = false;
 
-// 配列
-let tasks: string[] = ["タスク1", "タスク2"];
+// Arrays
+let tasks: string[] = ["Task 1", "Task 2"];
 
-// オブジェクト
-let task: { id: number; name: string } = { id: 1, name: "タスク" };
+// Objects
+let task: { id: number; name: string } = { id: 1, name: "Task" };
 
-// 型エイリアス
+// Type alias
 type Task = {
   id: number;
   name: string;
   completed: boolean;
 };
 
-// インターフェース（このプロジェクトで使われている方法）
+// Interface (method used in this project)
 interface Todo {
   id: number;
   text: string;
@@ -46,9 +46,9 @@ interface Todo {
 }
 ```
 
-### プロジェクトでの型定義の例
+### Example of Type Definitions in the Project
 
-このプロジェクトでは、`types/todo.ts`ファイルで型定義を行っています：
+In this project, type definitions are defined in the `types/todo.ts` file:
 
 ```typescript
 export interface Todo {
@@ -67,9 +67,9 @@ export interface StorageService {
 }
 ```
 
-### SQLとの類似点
+### Similarities with SQL
 
-SQLのテーブル定義とTypeScriptの型定義は似ています：
+SQL table definitions and TypeScript type definitions are similar:
 
 ```sql
 CREATE TABLE todos (
@@ -87,23 +87,23 @@ interface Todo {
 }
 ```
 
-この対応関係は直感的に理解しやすいでしょう。
+This correspondence is intuitive to understand.
 
-## React入門
+## Introduction to React
 
-ReactはUIを構築するためのJavaScriptライブラリです。コンポーネントベースのアプローチを取ります。
+React is a JavaScript library for building UIs. It takes a component-based approach.
 
-### コンポーネントの基本
+### Component Basics
 
 ```typescript
 import React from 'react';
 
-// 関数コンポーネント
+// Function component
 const TaskItem: React.FC<{ task: Todo }> = ({ task }) => {
   return (
     <div>
       <h3>{task.text}</h3>
-      <p>完了: {task.done ? 'はい' : 'いいえ'}</p>
+      <p>Completed: {task.done ? 'Yes' : 'No'}</p>
     </div>
   );
 };
@@ -111,28 +111,28 @@ const TaskItem: React.FC<{ task: Todo }> = ({ task }) => {
 export default TaskItem;
 ```
 
-### フックの使用
+### Using Hooks
 
-Reactでは「フック」という機能を使ってコンポーネントに状態やライフサイクルの機能を追加します：
+In React, "hooks" are used to add state and lifecycle features to components:
 
 ```typescript
 import React, { useState, useEffect } from 'react';
 
 const TodoList: React.FC = () => {
-  // 状態管理
+  // State management
   const [todos, setTodos] = useState<Todo[]>([]);
-  
-  // ライフサイクル（コンポーネントのマウント時に実行）
+
+  // Lifecycle (runs when component mounts)
   useEffect(() => {
-    // データを読み込む処理
+    // Data loading process
     async function loadTodos() {
       const data = await fetchTodos();
       setTodos(data);
     }
-    
+
     loadTodos();
-  }, []); // 空の配列を渡すと、コンポーネントのマウント時にのみ実行
-  
+  }, []); // Empty array means it only runs on mount
+
   return (
     <div>
       {todos.map(todo => (
@@ -143,20 +143,20 @@ const TodoList: React.FC = () => {
 };
 ```
 
-## Next.jsフレームワーク
+## Next.js Framework
 
-Next.jsはReactベースのフレームワークで、ルーティング、サーバーサイドレンダリング、静的サイト生成などの機能を提供します。
+Next.js is a React-based framework that provides routing, server-side rendering, static site generation, and more.
 
-### ページの基本構造
+### Basic Page Structure
 
-Next.jsでは、`pages`ディレクトリ内のファイルが自動的にルーティングされます：
+In Next.js, files in the `pages` directory are automatically routed:
 
 ```typescript
 // pages/index.tsx
 import React from "react";
 import dynamic from 'next/dynamic';
 
-// サーバーサイドレンダリングを無効化したコンポーネント
+// Component with server-side rendering disabled
 const TodoAppWithNoSSR = dynamic(
   () => import('./TodoAppComponent'),
   { ssr: false }
@@ -169,104 +169,104 @@ const IndexPage: React.FC = () => {
 export default IndexPage;
 ```
 
-### クライアントサイドのみの処理
+### Client-Side Only Processing
 
-WebAssembly（このプロジェクトではduck-WASM）を使う場合、サーバーサイドでは動作しないため、クライアントサイドのみで実行するように設定します：
+When using WebAssembly (DuckDB-WASM in this project), it doesn't work on the server-side, so you need to configure it to run only on the client-side:
 
 ```typescript
-// サーバーサイドでの実行を避ける条件分岐
+// Conditional branch to avoid server-side execution
 if (typeof window !== 'undefined') {
-  // クライアントサイドでのみ実行されるコード
+  // Code that only runs on the client-side
 }
 
-// dynamic importでSSRを無効化
+// Disable SSR with dynamic import
 const ComponentWithNoSSR = dynamic(
   () => import('./Component'),
   { ssr: false }
 );
 ```
 
-## プロジェクト構造
+## Project Structure
 
-Next.jsプロジェクトの基本構造は以下の通りです：
+The basic structure of a Next.js project is as follows:
 
 ```
 /
-├── pages/              # ルーティングされるページ
-│   ├── _app.tsx        # アプリのグローバル設定
-│   ├── index.tsx       # ルートページ（/）
+├── pages/              # Routed pages
+│   ├── _app.tsx        # App global settings
+│   ├── index.tsx       # Root page (/)
 │   └── ...
-├── public/             # 静的ファイル
-├── styles/             # CSSファイル
-├── components/         # 再利用可能なコンポーネント
-├── types/              # 型定義
-├── package.json        # 依存関係と設定
-└── tsconfig.json       # TypeScript設定
+├── public/             # Static files
+├── styles/             # CSS files
+├── components/         # Reusable components
+├── types/              # Type definitions
+├── package.json        # Dependencies and settings
+└── tsconfig.json       # TypeScript settings
 ```
 
-このTODOアプリの場合：
+For this TODO app:
 
 ```
 /
 ├── pages/
-│   ├── index.tsx         # メインページ
-│   ├── TodoAppComponent.tsx  # TODOアプリのメインロジック
-│   ├── duckDbStorage.ts  # データストレージの実装
-│   └── _app.tsx          # アプリ全体の設定
+│   ├── index.tsx         # Main page
+│   ├── TodoAppComponent.tsx  # TODO app main logic
+│   ├── duckDbStorage.ts  # Data storage implementation
+│   └── _app.tsx          # App-wide settings
 ├── types/
-│   └── todo.ts           # TODOの型定義
+│   └── todo.ts           # TODO type definitions
 ├── public/
-│   └── duckdb-wasm/      # WebAssemblyファイル
+│   └── duckdb-wasm/      # WebAssembly files
 └── ...
 ```
 
-## データの扱い方
+## Handling Data
 
-このプロジェクトでは、データの保存にduck-WASM（WebAssemblyで動作するDuckDB）を使用しています。
+This project uses DuckDB-WASM (DuckDB running on WebAssembly) for data storage.
 
-### データストレージの実装
+### Data Storage Implementation
 
 ```typescript
 class DuckDbStorageService implements StorageService {
-  // プロパティ
+  // Properties
   private db: any;
   private conn: any;
   private initialized: boolean;
-  
-  // 初期化メソッド
+
+  // Initialization method
   async initialize(): Promise<void> {
-    // WebAssemblyデータベースの初期化
-    // テーブルの作成
+    // Initialize WebAssembly database
+    // Create tables
   }
-  
-  // データ操作メソッド
+
+  // Data operation methods
   async getAllTodos(): Promise<Todo[]> {
-    // SQLクエリの実行
+    // Execute SQL query
     const result = await this.conn.query(`SELECT * FROM todos ORDER BY id`);
     return result.toArray().map(/* ... */);
   }
-  
+
   async addTodo(todo: Todo): Promise<boolean> {
-    // SQLのINSERT文でデータを追加
+    // Add data with SQL INSERT statement
   }
-  
+
   async updateTodo(todo: Todo): Promise<boolean> {
-    // SQLのUPDATE文でデータを更新
+    // Update data with SQL UPDATE statement
   }
-  
+
   async deleteTodo(id: number): Promise<boolean> {
-    // SQLのDELETE文でデータを削除
+    // Delete data with SQL DELETE statement
   }
 }
 ```
 
-### SQLからデータを取得する方法
+### How to Retrieve Data from SQL
 
 ```typescript
-// DuckDBを使ったSQLクエリの実行
+// Execute SQL query using DuckDB
 const result = await this.conn.query(`SELECT * FROM todos ORDER BY id`);
 
-// 結果を配列に変換し、型を整える
+// Convert result to array and format types
 const todos = result.toArray().map((row: any) => ({
   id: row.id,
   text: row.text,
@@ -274,33 +274,33 @@ const todos = result.toArray().map((row: any) => ({
 }));
 ```
 
-## 非同期処理
+## Asynchronous Processing
 
-TypeScriptでの非同期処理は、`async/await`構文を使って行います。SQLの経験がある方なら、データベース操作を非同期で行う概念は理解しやすいでしょう。
+Asynchronous processing in TypeScript is done using `async/await` syntax. If you have SQL experience, the concept of performing database operations asynchronously should be easy to understand.
 
-### 基本的な非同期処理
+### Basic Asynchronous Processing
 
 ```typescript
-// 非同期関数の定義
+// Define async function
 async function fetchTodos(): Promise<Todo[]> {
   try {
-    // データベース操作
+    // Database operation
     const result = await db.query('SELECT * FROM todos');
     return result;
   } catch (error) {
-    console.error("エラー:", error);
+    console.error("Error:", error);
     return [];
   }
 }
 
-// 非同期関数の呼び出し
+// Call async function
 async function main() {
   const todos = await fetchTodos();
   console.log(todos);
 }
 ```
 
-### Reactコンポーネントでの非同期処理
+### Asynchronous Processing in React Components
 
 ```typescript
 const TodoList: React.FC = () => {
@@ -315,18 +315,18 @@ const TodoList: React.FC = () => {
         const data = await fetchTodos();
         setTodos(data);
       } catch (err) {
-        setError("データの読み込みに失敗しました");
+        setError("Failed to load data");
       } finally {
         setIsLoading(false);
       }
     }
-    
+
     loadData();
   }, []);
-  
-  if (isLoading) return <div>読み込み中...</div>;
-  if (error) return <div>エラー: {error}</div>;
-  
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
     <div>
       {todos.map(todo => (
@@ -337,53 +337,53 @@ const TodoList: React.FC = () => {
 };
 ```
 
-## 開発環境のセットアップ
+## Development Environment Setup
 
-このプロジェクトを開発環境で実行するための手順：
+Steps to run this project in a development environment:
 
 ```bash
-# リポジトリをクローン
+# Clone the repository
 git clone https://github.com/yourusername/nextjs-todo-example.git
 
-# ディレクトリに移動
+# Navigate to the directory
 cd nextjs-todo-example
 
-# 依存関係をインストール
+# Install dependencies
 npm install
 
-# 開発サーバーを起動
+# Start development server
 npm run dev
 ```
 
-### 必要なツール
+### Required Tools
 
-1. Node.js（最新のLTSバージョン推奨）
-2. npm（Node.jsにバンドルされています）
-3. コードエディタ（Visual Studio Codeが推奨）
-   - 推奨拡張機能：ESLint, Prettier, TypeScript
+1. Node.js (latest LTS version recommended)
+2. npm (bundled with Node.js)
+3. Code editor (Visual Studio Code recommended)
+   - Recommended extensions: ESLint, Prettier, TypeScript
 
-## 学習リソース
+## Learning Resources
 
-TypeScriptとNext.jsを学ぶための推奨リソース：
+Recommended resources for learning TypeScript and Next.js:
 
 ### TypeScript
-- [TypeScript公式ドキュメント](https://www.typescriptlang.org/docs/)
-- [TypeScriptチュートリアル（日本語）](https://typescript-jp.gitbook.io/deep-dive/)
+- [TypeScript Official Documentation](https://www.typescriptlang.org/docs/)
+- [TypeScript Deep Dive](https://basarat.gitbook.io/typescript/)
 
 ### React
-- [React公式ドキュメント](https://ja.reactjs.org/docs/getting-started.html)
-- [Reactチュートリアル](https://ja.reactjs.org/tutorial/tutorial.html)
+- [React Official Documentation](https://react.dev/)
+- [React Tutorial](https://react.dev/learn)
 
 ### Next.js
-- [Next.js公式ドキュメント](https://nextjs.org/docs)
-- [Next.jsチュートリアル](https://nextjs.org/learn/basics/create-nextjs-app)
+- [Next.js Official Documentation](https://nextjs.org/docs)
+- [Next.js Tutorial](https://nextjs.org/learn/basics/create-nextjs-app)
 
-## まとめ
+## Summary
 
-TypeScriptとNext.jsの学習は、SQLの知識をベースにすることで進めやすくなります：
+Learning TypeScript and Next.js can be easier by building on SQL knowledge:
 
-1. **型システム** - SQLのテーブル定義とTypeScriptの型定義は概念的に似ています
-2. **非同期処理** - データベース操作の非同期性の理解があれば、`async/await`も理解しやすいでしょう
-3. **データの流れ** - データの取得・表示・更新のパターンはSQLを使ったアプリケーションと似ています
+1. **Type System** - SQL table definitions and TypeScript type definitions are conceptually similar
+2. **Asynchronous Processing** - If you understand the asynchronous nature of database operations, `async/await` will be easy to understand
+3. **Data Flow** - The pattern of retrieving, displaying, and updating data is similar to SQL-based applications
 
-このプロジェクトを通して、TypeScriptとNext.jsの基本を学び、さらに発展させていくことができます。 
+Through this project, you can learn the basics of TypeScript and Next.js and further expand your skills.
