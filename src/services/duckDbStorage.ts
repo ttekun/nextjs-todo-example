@@ -89,15 +89,8 @@ class DuckDbStorageService implements StorageService {
         
         // テーブル作成
         console.log("[DEBUG] DuckDbStorageService: テーブル作成開始");
-        
-        // テーブルをドロップして再作成（idカラムの型を変更するため）
-        try {
-          await this.conn.query(`DROP TABLE IF EXISTS todos`);
-          console.log("[DEBUG] DuckDbStorageService: 既存のテーブルを削除しました");
-        } catch (error) {
-          console.warn("[DEBUG] DuckDbStorageService: テーブル削除エラー:", error);
-        }
-        
+
+        // Create table only if it doesn't exist (preserve existing data)
         await this.conn.query(`
           CREATE TABLE IF NOT EXISTS todos (
             id BIGINT PRIMARY KEY,

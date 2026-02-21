@@ -69,15 +69,14 @@ describe('TodoAppComponent', () => {
     // ストレージサービスのaddTodoが呼ばれたことを確認
     await waitFor(() => {
       expect(mockAddTodo).toHaveBeenCalledWith(expect.objectContaining({
-        // IDは7桁以内の数値（修正後の実装に合わせる）
         id: expect.any(Number),
         text: '新しいTODO',
         done: false
       }));
-      
-      // IDが7桁以内であることを確認
+
+      // ID is a positive number (unique ID generation)
       const calledArgs = mockAddTodo.mock.calls[0][0];
-      expect(calledArgs.id).toBeLessThan(10000000); // 7桁以内
+      expect(calledArgs.id).toBeGreaterThan(0);
     });
     
     // 注意: 実際のコンポーネントの実装では、入力フィールドがクリアされるのは

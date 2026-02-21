@@ -49,12 +49,10 @@ const TodoAppComponent: React.FC = () => {
 
   const addTodo = async (): Promise<void> => {
     if (input.trim() === "") return;
-    
-    // より安全なID生成方法に変更
-    // タイムスタンプの下位7桁を使用してINT32の範囲内に収める
-    const timestamp = Date.now();
-    const safeId = timestamp % 10000000; // 7桁の数値にする
-    
+
+    // Generate unique ID using timestamp + random suffix to prevent collisions
+    const safeId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+
     const newTodo: Todo = { id: safeId, text: input.trim(), done: false };
 
     try {
