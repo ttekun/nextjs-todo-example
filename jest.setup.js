@@ -39,10 +39,13 @@ global.Worker = class {
     this.url = stringUrl;
     this.onmessage = () => {};
   }
-  
+
   postMessage(msg) {
     this.onmessage({ data: { id: 'test', result: {} } });
   }
-  
+
   terminate() {}
-}; 
+};
+
+// Mock fetch for WASM file existence checks
+global.fetch = jest.fn().mockResolvedValue({ status: 200 }); 

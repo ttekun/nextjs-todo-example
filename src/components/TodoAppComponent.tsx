@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { getDuckDbStorage } from "../services/duckDbStorage";
 import { Todo } from "../types/todo";
 
+const MAX_TODO_LENGTH = 500;
+
 const TodoAppComponent: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState<string>("");
@@ -9,6 +11,7 @@ const TodoAppComponent: React.FC = () => {
   const [editInput, setEditInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   // duck-WASMストレージのインスタンスを取得
   const storage = getDuckDbStorage();
@@ -17,22 +20,12 @@ const TodoAppComponent: React.FC = () => {
     // duck-WASMからTODOを読み込む
     const loadTodos = async (): Promise<void> => {
       try {
-        console.log("[DEBUG] TodoAppComponent: loadTodos開始");
-        
-        // duck-WASMの初期化
-        console.log("[DEBUG] TodoAppComponent: storage.initialize()を呼び出し");
         await storage.initialize();
-        console.log("[DEBUG] TodoAppComponent: storage.initialize()完了");
-        
-        console.log("[DEBUG] TodoAppComponent: storage.getAllTodos()を呼び出し");
         const storedTodos = await storage.getAllTodos();
-        console.log("[DEBUG] TodoAppComponent: storage.getAllTodos()完了", storedTodos);
-        
         setTodos(storedTodos);
-        console.log("duck-WASMからデータ読み込み成功", storedTodos);
         setIsLoading(false);
       } catch (error) {
-        console.error("[DEBUG] TodoAppComponent: エラー発生:", error);
+        console.error("Failed to load todos:", error);
         setError("データの読み込みに失敗しました。");
         setIsLoading(false);
       }
@@ -42,32 +35,40 @@ const TodoAppComponent: React.FC = () => {
 
     // クリーンアップ関数
     return () => {
-      console.log("[DEBUG] TodoAppComponent: クリーンアップ関数実行");
       storage.close().catch(console.error);
     };
   }, []);
 
+  const clearOperationError = () => {
+    setOperationError(null);
+  };
+
   const addTodo = async (): Promise<void> => {
     if (input.trim() === "") return;
 
+    // Input validation
+    if (input.trim().length > MAX_TODO_LENGTH) {
+      setOperationError(`TODOは${MAX_TODO_LENGTH}文字以内で入力してください。`);
+      return;
+    }
+
     // Generate unique ID using timestamp + random suffix to prevent collisions
     const safeId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-
     const newTodo: Todo = { id: safeId, text: input.trim(), done: false };
 
     try {
       const success = await storage.addTodo(newTodo);
       if (success) {
         setTodos([...todos, newTodo]);
-        console.log("TODO追加:", newTodo);
+        setInput("");
+        clearOperationError();
       } else {
-        console.error("TODOの追加に失敗しました");
+        setOperationError("TODOの追加に失敗しました。");
       }
     } catch (error) {
-      console.error("TODO追加エラー:", error);
+      console.error("Failed to add todo:", error);
+      setOperationError("TODOの追加に失敗しました。");
     }
-
-    setInput("");
   };
 
   const deleteTodo = async (id: number): Promise<void> => {
@@ -76,12 +77,13 @@ const TodoAppComponent: React.FC = () => {
       if (success) {
         const newTodos = todos.filter(todo => todo.id !== id);
         setTodos(newTodos);
-        console.log("TODO削除:", id);
+        clearOperationError();
       } else {
-        console.error("TODOの削除に失敗しました");
+        setOperationError("TODOの削除に失敗しました。");
       }
     } catch (error) {
-      console.error("TODO削除エラー:", error);
+      console.error("Failed to delete todo:", error);
+      setOperationError("TODOの削除に失敗しました。");
     }
   };
 
@@ -96,17 +98,18 @@ const TodoAppComponent: React.FC = () => {
       if (success) {
         const newTodos = todos.map(todo => {
           if (todo.id === id) {
-            console.log("TODO状態切替:", updatedTodo);
             return updatedTodo;
           }
           return todo;
         });
         setTodos(newTodos);
+        clearOperationError();
       } else {
-        console.error("TODOの状態変更に失敗しました");
+        setOperationError("TODOの状態変更に失敗しました。");
       }
     } catch (error) {
-      console.error("TODO状態切替エラー:", error);
+      console.error("Failed to toggle todo:", error);
+      setOperationError("TODOの状態変更に失敗しました。");
     }
   };
 
@@ -114,22 +117,27 @@ const TodoAppComponent: React.FC = () => {
   const startEditing = (id: number, text: string): void => {
     setEditingId(id);
     setEditInput(text);
-    console.log("編集開始:", { id, text });
+    clearOperationError();
   };
 
   // 編集保存
   const saveEdit = async (id: number): Promise<void> => {
+    // Input validation
+    if (editInput.trim().length > MAX_TODO_LENGTH) {
+      setOperationError(`TODOは${MAX_TODO_LENGTH}文字以内で入力してください。`);
+      return;
+    }
+
     try {
       const todoToUpdate = todos.find(todo => todo.id === id);
       if (!todoToUpdate) return;
 
-      const updatedTodo: Todo = { ...todoToUpdate, text: editInput };
+      const updatedTodo: Todo = { ...todoToUpdate, text: editInput.trim() };
       const success = await storage.updateTodo(updatedTodo);
 
       if (success) {
         const newTodos = todos.map(todo => {
           if (todo.id === id) {
-            console.log("TODO編集保存:", updatedTodo);
             return updatedTodo;
           }
           return todo;
@@ -137,11 +145,13 @@ const TodoAppComponent: React.FC = () => {
         setTodos(newTodos);
         setEditingId(null);
         setEditInput("");
+        clearOperationError();
       } else {
-        console.error("TODOの編集に失敗しました");
+        setOperationError("TODOの編集に失敗しました。");
       }
     } catch (error) {
-      console.error("TODO編集保存エラー:", error);
+      console.error("Failed to save edit:", error);
+      setOperationError("TODOの編集に失敗しました。");
     }
   };
 
@@ -156,12 +166,22 @@ const TodoAppComponent: React.FC = () => {
   return (
     <div className="container">
       <h1>TODOアプリ (duck-WASM版)</h1>
+      {operationError && (
+        <div className="operation-error">
+          {operationError}
+          <button className="dismiss-btn" onClick={clearOperationError}>×</button>
+        </div>
+      )}
       <div className="input-area">
         <input
           type="text"
           value={input}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") addTodo();
+          }}
           placeholder="TODOを入力..."
+          maxLength={MAX_TODO_LENGTH}
         />
         <button onClick={addTodo}>追加</button>
       </div>
@@ -174,7 +194,11 @@ const TodoAppComponent: React.FC = () => {
                   type="text"
                   value={editInput}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditInput(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === "Enter") saveEdit(todo.id);
+                  }}
                   style={{ flex: 1 }}
+                  maxLength={MAX_TODO_LENGTH}
                 />
                 <div className="actions">
                   <button onClick={() => saveEdit(todo.id)}>保存</button>
@@ -208,6 +232,31 @@ const TodoAppComponent: React.FC = () => {
           margin-bottom: 1.5rem;
           font-weight: 700;
           color: #e7e9ea;
+        }
+        .operation-error {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.75rem 1rem;
+          margin-bottom: 1rem;
+          background: #4a1a1a;
+          border: 1px solid #f4212e;
+          border-radius: 8px;
+          color: #f4212e;
+          font-size: 0.9rem;
+        }
+        .dismiss-btn {
+          background: transparent;
+          border: none;
+          color: #f4212e;
+          font-size: 1.2rem;
+          cursor: pointer;
+          padding: 0;
+          margin-left: 0.5rem;
+          line-height: 1;
+        }
+        .dismiss-btn:hover {
+          background: transparent;
         }
         .input-area {
           display: flex;
@@ -302,4 +351,4 @@ const TodoAppComponent: React.FC = () => {
   );
 };
 
-export default TodoAppComponent; 
+export default TodoAppComponent;
