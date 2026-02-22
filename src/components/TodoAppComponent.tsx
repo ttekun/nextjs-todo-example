@@ -17,25 +17,34 @@ const TodoAppComponent: React.FC = () => {
   const storage = getDuckDbStorage();
 
   useEffect(() => {
+    let cancelled = false;
+
     // Load TODOs from duck-WASM
     const loadTodos = async (): Promise<void> => {
       try {
         await storage.initialize();
         const storedTodos = await storage.getAllTodos();
-        setTodos(storedTodos);
-        setIsLoading(false);
+        if (!cancelled) {
+          setTodos(storedTodos);
+        }
       } catch (error) {
         console.error("Failed to load todos:", error);
-        setError("Failed to load data.");
-        setIsLoading(false);
+        if (!cancelled) {
+          setError("Failed to load data.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadTodos();
 
-    // Cleanup function
+    // In React StrictMode(dev), effect cleanup can run immediately.
+    // Calling storage.close() here may conflict with DuckDB initialization in progress.
     return () => {
-      storage.close().catch(console.error);
+      cancelled = true;
     };
   }, []);
 

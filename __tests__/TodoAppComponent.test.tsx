@@ -153,4 +153,53 @@ describe('TodoAppComponent', () => {
       }));
     });
   });
-}); 
+
+  test('Should not get stuck on loading after remount during pending initialization', async () => {
+    let resolveFirstInitialize: (() => void) | null = null;
+    let closedDuringInit = false;
+
+    const closeMock = jest.fn().mockImplementation(async () => {
+      closedDuringInit = true;
+    });
+
+    const customStorage = {
+      initialize: jest
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              resolveFirstInitialize = resolve;
+            })
+        )
+        .mockImplementation(() => {
+          if (closedDuringInit) {
+            // Simulate an initialization deadlock caused by close() during init.
+            return new Promise<void>(() => {});
+          }
+          return Promise.resolve();
+        }),
+      getAllTodos: jest.fn().mockResolvedValue(mockTodos),
+      addTodo: mockAddTodo,
+      deleteTodo: mockDeleteTodo,
+      updateTodo: mockUpdateTodo,
+      close: closeMock
+    };
+
+    (getDuckDbStorage as jest.Mock).mockReturnValue(customStorage);
+
+    const firstRender = render(<TodoAppComponent />);
+    expect(screen.getByText('データを読み込み中...')).toBeInTheDocument();
+
+    // Unmount while initialize() is still pending.
+    firstRender.unmount();
+    resolveFirstInitialize?.();
+
+    render(<TodoAppComponent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TODOアプリ (duck-WASM版)')).toBeInTheDocument();
+    });
+
+    expect(closeMock).not.toHaveBeenCalled();
+  });
+});
