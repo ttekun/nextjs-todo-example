@@ -23,7 +23,7 @@ graph TD
 
 ```sql
 CREATE TABLE todos (
-  id INTEGER PRIMARY KEY,
+  id BIGINT PRIMARY KEY,
   text TEXT NOT NULL,
   done BOOLEAN DEFAULT FALSE
 );

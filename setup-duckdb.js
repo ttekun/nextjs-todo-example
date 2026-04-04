@@ -3,31 +3,31 @@ const path = require('path');
 const https = require('https');
 const { exec } = require('child_process');
 
-// ディレクトリの作成
+// Create target directory if it doesn't exist
 const targetDir = path.join(__dirname, 'public', 'duckdb-wasm');
 if (!fs.existsSync(targetDir)) {
   console.log('Creating directory:', targetDir);
   fs.mkdirSync(targetDir, { recursive: true });
 }
 
-// DuckDB-WASMのバージョン（package.jsonから読み取る）
+// Read DuckDB-WASM version from package.json
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 const duckdbVersion = packageJson.dependencies['@duckdb/duckdb-wasm'].replace('^', '');
 console.log(`Using DuckDB-WASM version: ${duckdbVersion}`);
 
-// CDNのベースURL
+// CDN base URL
 const cdnBase = `https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${duckdbVersion}/dist`;
 
-// DuckDB-WASMファイルのダウンロード設定
+// Files to download
 const files = [
-  // 基本ファイル（必須）
+  // Required files
   { url: `${cdnBase}/duckdb-eh.wasm`, dest: path.join(targetDir, 'duckdb-eh.wasm') },
   { url: `${cdnBase}/duckdb-browser-eh.worker.js`, dest: path.join(targetDir, 'duckdb-browser-eh.worker.js') },
-  
-  // ソースマップ（開発時に便利）
+
+  // Source maps (useful during development)
   { url: `${cdnBase}/duckdb-browser-eh.worker.js.map`, dest: path.join(targetDir, 'duckdb-browser-eh.worker.js.map') },
-  
-  // その他の可能性があるファイル
+
+  // Optional alternative bundles
   { url: `${cdnBase}/duckdb-mvp.wasm`, dest: path.join(targetDir, 'duckdb-mvp.wasm') },
   { url: `${cdnBase}/duckdb-browser-mvp.worker.js`, dest: path.join(targetDir, 'duckdb-browser-mvp.worker.js') },
   { url: `${cdnBase}/duckdb-browser-mvp.worker.js.map`, dest: path.join(targetDir, 'duckdb-browser-mvp.worker.js.map') },
@@ -38,24 +38,24 @@ const files = [
   { url: `${cdnBase}/duckdb-browser-coi.pthread.worker.js.map`, dest: path.join(targetDir, 'duckdb-browser-coi.pthread.worker.js.map') }
 ];
 
-// ファイルをダウンロードする関数
+// Download a single file, skipping gracefully on 404
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     console.log(`Downloading ${url}...`);
     const file = fs.createWriteStream(dest);
-    
+
     https.get(url, (response) => {
-      // 404の場合は警告を出してスキップ
+      // Skip files that don't exist in this version
       if (response.statusCode === 404) {
         console.warn(`File not found (404): ${url}`);
         file.close();
         fs.unlink(dest, () => {});
-        resolve(); // エラーではなく続行を許可
+        resolve(); // Not a fatal error — continue
         return;
       }
-      
+
       response.pipe(file);
-      
+
       file.on('finish', () => {
         file.close();
         console.log(`Downloaded ${url} to ${dest}`);
@@ -64,16 +64,16 @@ function downloadFile(url, dest) {
     }).on('error', (err) => {
       fs.unlink(dest, () => {}); // Delete the file on error
       console.error(`Error downloading ${url}:`, err.message);
-      resolve(); // エラーでも続行を許可
+      resolve(); // Continue even on error
     });
   });
 }
 
-// すべてのファイルをダウンロード
+// Download all files sequentially
 async function downloadAllFiles() {
   let successCount = 0;
   let failCount = 0;
-  
+
   for (const file of files) {
     try {
       await downloadFile(file.url, file.dest);
@@ -82,19 +82,19 @@ async function downloadAllFiles() {
       failCount++;
     }
   }
-  
+
   console.log(`Download complete. Success: ${successCount}, Failed/Not Found: ${failCount}`);
-  
+
   if (successCount < 2) {
-    throw new Error('必須ファイルのダウンロードに失敗しました。ネットワーク接続を確認してください。');
+    throw new Error('Required files could not be downloaded. Please check your network connection.');
   }
 }
 
-// メイン処理
-console.log('DuckDB-WASMファイルのセットアップを開始します...');
+// Entry point
+console.log('Starting DuckDB-WASM file setup...');
 downloadAllFiles()
-  .then(() => console.log('セットアップが完了しました！'))
+  .then(() => console.log('Setup complete!'))
   .catch(err => {
-    console.error('セットアップ中にエラーが発生しました:', err);
+    console.error('Error during setup:', err);
     process.exit(1);
-  }); 
+  });

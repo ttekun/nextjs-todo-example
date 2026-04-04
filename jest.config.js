@@ -1,25 +1,25 @@
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
-  // next.config.jsとテスト環境用の.envファイルが配置されたディレクトリをセット
+  // Directory containing next.config.js and .env files for the test environment
   dir: './',
 });
 
-// Jestのカスタム設定を設置する場所
+// Custom Jest configuration
 const customJestConfig = {
-  // テストファイルのパターンを指定
+  // Pattern for test files
   testMatch: ['**/__tests__/**/*.test.(ts|tsx)'],
-  // テスト環境のセットアップファイル
+  // Setup file executed after the test framework is installed
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  // テスト環境
+  // Test environment
   testEnvironment: 'jest-environment-jsdom',
-  // モジュール名のエイリアス
+  // Module name aliases
   moduleNameMapper: {
-    // CSS、画像などのモックを設定
+    // Mock CSS, images, and other static assets
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
 };
 
-// createJestConfigを定義することによって、next/jestが提供する設定とマージする
-module.exports = createJestConfig(customJestConfig); 
+// Merge with the config provided by next/jest
+module.exports = createJestConfig(customJestConfig);

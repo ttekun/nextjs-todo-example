@@ -33,8 +33,8 @@ src/
 
 - **SSR disabled**: `pages/index.tsx` uses `next/dynamic` with `{ ssr: false }` because DuckDB-WASM only works in browser environments
 - **Singleton storage**: `getDuckDbStorage()` returns a singleton instance to prevent multiple database connections
-- **SQL injection prevention**: Text values are escaped using `replace(/'/g, "''")` before SQL interpolation
-- **ID generation**: Uses `Date.now() % 10000000` to keep IDs within 7 digits
+- **SQL injection prevention**: All DML operations use prepared statements (`conn.prepare()` + `stmt.run()`) to prevent SQL injection entirely
+- **ID generation**: Uses `Date.now() * 1000 + Math.floor(Math.random() * 1000)` to produce a unique millisecond-precision timestamp with a random suffix, avoiding collisions under rapid creation
 
 ## DuckDB-WASM Setup
 
@@ -54,4 +54,6 @@ CREATE TABLE todos (
 
 ## Testing
 
-Tests use Jest with Testing Library. DuckDB-WASM is fully mocked in `jest.setup.js` to avoid WASM loading in test environment. Mock data is defined at the top of test files.
+Tests use Jest with Testing Library. DuckDB-WASM is mocked at two levels:
+- `jest.setup.js`: global mock for `TodoAppComponent` tests (high-level storage mock)
+- `duckDbStorage.test.ts`: low-level mock of `conn.query` / `conn.prepare` that verifies actual SQL and parameter binding in `DuckDbStorageService`

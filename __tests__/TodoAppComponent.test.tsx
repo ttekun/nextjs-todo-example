@@ -155,7 +155,8 @@ describe('TodoAppComponent', () => {
   });
 
   test('Should not get stuck on loading after remount during pending initialization', async () => {
-    let resolveFirstInitialize: (() => void) | null = null;
+    // eslint-disable-next-line prefer-const
+    let resolveFirstInitialize: { fn: (() => void) | null } = { fn: null };
     let closedDuringInit = false;
 
     const closeMock = jest.fn().mockImplementation(async () => {
@@ -168,7 +169,7 @@ describe('TodoAppComponent', () => {
         .mockImplementationOnce(
           () =>
             new Promise<void>((resolve) => {
-              resolveFirstInitialize = resolve;
+              resolveFirstInitialize.fn = resolve;
             })
         )
         .mockImplementation(() => {
@@ -192,7 +193,7 @@ describe('TodoAppComponent', () => {
 
     // Unmount while initialize() is still pending.
     firstRender.unmount();
-    resolveFirstInitialize?.();
+    resolveFirstInitialize.fn?.();
 
     render(<TodoAppComponent />);
 

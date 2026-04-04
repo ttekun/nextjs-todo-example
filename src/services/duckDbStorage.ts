@@ -65,6 +65,8 @@ class DuckDbStorageService implements StorageService {
         this.initialized = true;
         return this.db;
       } catch (error) {
+        // Reset so that initialization can be retried on the next call
+        this.initPromise = null;
         console.error("DuckDB initialization failed:", error);
         throw error;
       }
@@ -80,7 +82,7 @@ class DuckDbStorageService implements StorageService {
       await this.initialize();
       const result = await this.conn.query(`SELECT * FROM todos ORDER BY id`);
       const rows = result.toArray().map((row: any) => ({
-        id: row.id,
+        id: Number(row.id),
         text: row.text,
         done: row.done
       }));
@@ -96,10 +98,11 @@ class DuckDbStorageService implements StorageService {
 
     try {
       await this.initialize();
-      await this.conn.query(`
-        INSERT INTO todos (id, text, done)
-        VALUES (${todo.id}, '${todo.text.replace(/'/g, "''")}', ${todo.done ? 'TRUE' : 'FALSE'})
-      `);
+      const stmt = await this.conn.prepare(
+        'INSERT INTO todos (id, text, done) VALUES (?, ?, ?)'
+      );
+      await stmt.run(todo.id, todo.text, todo.done);
+      stmt.close();
       return true;
     } catch (error) {
       console.error("Failed to add todo:", error);
@@ -112,7 +115,9 @@ class DuckDbStorageService implements StorageService {
 
     try {
       await this.initialize();
-      await this.conn.query(`DELETE FROM todos WHERE id = ${id}`);
+      const stmt = await this.conn.prepare('DELETE FROM todos WHERE id = ?');
+      await stmt.run(id);
+      stmt.close();
       return true;
     } catch (error) {
       console.error("Failed to delete todo:", error);
@@ -125,11 +130,11 @@ class DuckDbStorageService implements StorageService {
 
     try {
       await this.initialize();
-      await this.conn.query(`
-        UPDATE todos
-        SET text = '${todo.text.replace(/'/g, "''")}', done = ${todo.done ? 'TRUE' : 'FALSE'}
-        WHERE id = ${todo.id}
-      `);
+      const stmt = await this.conn.prepare(
+        'UPDATE todos SET text = ?, done = ? WHERE id = ?'
+      );
+      await stmt.run(todo.text, todo.done, todo.id);
+      stmt.close();
       return true;
     } catch (error) {
       console.error("Failed to update todo:", error);

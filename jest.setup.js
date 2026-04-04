@@ -4,28 +4,33 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
-// モックの設定
+// Mock prepared statement returned by conn.prepare()
+const mockStatement = {
+  run: jest.fn().mockResolvedValue({}),
+  query: jest.fn().mockResolvedValue({ toArray: () => [] }),
+  close: jest.fn(),
+};
+
 jest.mock('@duckdb/duckdb-wasm', () => {
   return {
-    // DuckDBのモック
-    ConsoleLogger: jest.fn().mockImplementation(() => ({
-      // 必要に応じてメソッドを追加
-    })),
+    ConsoleLogger: jest.fn().mockImplementation(() => ({})),
     AsyncDuckDB: jest.fn().mockImplementation(() => ({
       instantiate: jest.fn().mockResolvedValue({}),
       connect: jest.fn().mockResolvedValue({
-        query: jest.fn().mockImplementation((query, params) => {
-          // クエリに応じてモックデータを返す
-          if (query.includes('SELECT')) {
-            return {
+        // Direct query used only for DDL (CREATE TABLE IF NOT EXISTS) and SELECT
+        query: jest.fn().mockImplementation((sql) => {
+          if (sql.includes('SELECT')) {
+            return Promise.resolve({
               toArray: () => [
-                { id: 1, text: 'テストTODO 1', done: false },
-                { id: 2, text: 'テストTODO 2', done: true }
+                { id: 1, text: 'Test TODO 1', done: false },
+                { id: 2, text: 'Test TODO 2', done: true }
               ]
-            };
+            });
           }
-          return {};
+          return Promise.resolve({});
         }),
+        // Prepared statement API used for INSERT, UPDATE, DELETE
+        prepare: jest.fn().mockResolvedValue(mockStatement),
         close: jest.fn().mockResolvedValue({}),
       }),
       terminate: jest.fn().mockResolvedValue({}),
@@ -33,7 +38,7 @@ jest.mock('@duckdb/duckdb-wasm', () => {
   };
 });
 
-// グローバルなモック
+// Global Worker mock required for DuckDB-WASM
 global.Worker = class {
   constructor(stringUrl) {
     this.url = stringUrl;
@@ -48,4 +53,4 @@ global.Worker = class {
 };
 
 // Mock fetch for WASM file existence checks
-global.fetch = jest.fn().mockResolvedValue({ status: 200 }); 
+global.fetch = jest.fn().mockResolvedValue({ status: 200 });

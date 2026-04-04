@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getDuckDbStorage } from "../services/duckDbStorage";
 import { Todo } from "../types/todo";
 
@@ -13,8 +13,9 @@ const TodoAppComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
 
-  // Get duck-WASM storage instance
-  const storage = getDuckDbStorage();
+  // Stable ref to the storage singleton — avoids calling getDuckDbStorage() on every render
+  const storageRef = useRef(getDuckDbStorage());
+  const storage = storageRef.current;
 
   useEffect(() => {
     let cancelled = false;
@@ -129,9 +130,20 @@ const TodoAppComponent: React.FC = () => {
     clearOperationError();
   };
 
+  // Cancel edit without saving
+  const cancelEdit = (): void => {
+    setEditingId(null);
+    setEditInput("");
+    clearOperationError();
+  };
+
   // Save edit
   const saveEdit = async (id: number): Promise<void> => {
     // Input validation
+    if (editInput.trim() === "") {
+      setOperationError("TODO cannot be empty.");
+      return;
+    }
     if (editInput.trim().length > MAX_TODO_LENGTH) {
       setOperationError(`TODO must be within ${MAX_TODO_LENGTH} characters.`);
       return;
@@ -176,9 +188,13 @@ const TodoAppComponent: React.FC = () => {
     <div className="container">
       <h1>TODOアプリ (duck-WASM版)</h1>
       {operationError && (
-        <div className="operation-error">
+        <div className="operation-error" role="alert">
           {operationError}
-          <button className="dismiss-btn" onClick={clearOperationError}>×</button>
+          <button
+            className="dismiss-btn"
+            onClick={clearOperationError}
+            aria-label="Dismiss error"
+          >×</button>
         </div>
       )}
       <div className="input-area">
@@ -191,10 +207,11 @@ const TodoAppComponent: React.FC = () => {
           }}
           placeholder="TODOを入力..."
           maxLength={MAX_TODO_LENGTH}
+          aria-label="New TODO text"
         />
-        <button onClick={addTodo}>追加</button>
+        <button onClick={addTodo} aria-label="Add TODO">追加</button>
       </div>
-      <ul className="todo-list">
+      <ul className="todo-list" aria-label="TODO list">
         {todos.map(todo => (
           <li key={todo.id} className={todo.done ? "done" : ""}>
             {editingId === todo.id ? (
@@ -205,20 +222,31 @@ const TodoAppComponent: React.FC = () => {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditInput(e.target.value)}
                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                     if (e.key === "Enter") saveEdit(todo.id);
+                    if (e.key === "Escape") cancelEdit();
                   }}
                   style={{ flex: 1 }}
                   maxLength={MAX_TODO_LENGTH}
+                  aria-label="Edit TODO text"
                 />
                 <div className="actions">
-                  <button onClick={() => saveEdit(todo.id)}>保存</button>
+                  <button onClick={() => saveEdit(todo.id)} aria-label="Save edit">保存</button>
+                  <button className="cancel-btn" onClick={cancelEdit} aria-label="Cancel edit">キャンセル</button>
                 </div>
               </>
             ) : (
               <>
-                <span onClick={() => toggleTodo(todo.id)}>{todo.text}</span>
+                <span
+                  onClick={() => toggleTodo(todo.id)}
+                  role="checkbox"
+                  aria-checked={todo.done}
+                  tabIndex={0}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLSpanElement>) => {
+                    if (e.key === " " || e.key === "Enter") toggleTodo(todo.id);
+                  }}
+                >{todo.text}</span>
                 <div className="actions">
-                  <button onClick={() => startEditing(todo.id, todo.text)}>編集</button>
-                  <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>削除</button>
+                  <button onClick={() => startEditing(todo.id, todo.text)} aria-label={`Edit: ${todo.text}`}>編集</button>
+                  <button className="delete-btn" onClick={() => deleteTodo(todo.id)} aria-label={`Delete: ${todo.text}`}>削除</button>
                 </div>
               </>
             )}
@@ -314,6 +342,12 @@ const TodoAppComponent: React.FC = () => {
         }
         .delete-btn:hover {
           background-color: #e0202b;
+        }
+        .cancel-btn {
+          background-color: #536471;
+        }
+        .cancel-btn:hover {
+          background-color: #6e767d;
         }
         .actions {
           display: inline-flex;
