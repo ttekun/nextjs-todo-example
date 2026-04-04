@@ -1,130 +1,85 @@
-# Next.js TODO App (DuckDB-WASM Version)
+# DuckDB-WASM × Next.js Demo
 
-This project is a simple TODO application built with Next.js. It uses DuckDB-WASM for data storage.
+> Run SQL in the browser — fully client-side data storage with no backend required.
 
-## Features
+This project demonstrates how to integrate **DuckDB-WASM** into a Next.js application. All data is stored and queried via SQL directly in the browser using WebAssembly. No server, no database connection, no cloud — just the browser.
 
-- Simple TODO application built with Next.js
-- DuckDB-WASM (DuckDB running on WebAssembly) for data storage
-- Runs as an in-browser SQL database
-- Modern UI/UX
-- Responsive design (mobile-friendly)
-- Type safety with TypeScript
-- Unit testing with Jest
+## Why This Is Interesting
+
+Most web apps need a backend to persist data. DuckDB-WASM flips that assumption:
+
+- **Full SQL in the browser** — `SELECT`, `INSERT`, `UPDATE`, `DELETE` all run locally via WebAssembly
+- **Zero backend** — no API server, no database server, nothing to deploy
+- **Real DuckDB** — the same high-performance analytical engine, running client-side
+
+This demo uses a simple TODO app as the vehicle to show the pattern end-to-end.
 
 ## Tech Stack
 
-- Next.js
-- React
-- DuckDB-WASM
-- TypeScript
-- SQL
-- Jest & Testing Library
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 + React 18 |
+| Database | DuckDB-WASM |
+| Language | TypeScript (strict mode) |
+| Testing | Jest + Testing Library |
 
-## Installation
+## Getting Started
 
 ```bash
-# Clone the repository
-git clone https://github.com/ttekun/nextjs-todo-example.git
-
-# Navigate to the directory
-cd nextjs-todo-example
-
-# Install dependencies
+git clone https://github.com/ttekun/duckdb-wasm-nextjs-demo.git
+cd duckdb-wasm-nextjs-demo
 npm install
-
-# Setup DuckDB-WASM files
-npm run setup
-
-# Start the development server (setup script runs automatically)
-npm run dev
+npm run dev   # automatically downloads WASM files on first run
 ```
 
-With this setup:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-1. The `public/duckdb-wasm` directory is not pushed to GitHub
-2. Required WASM files are downloaded via `npm run setup`
-3. The setup script runs automatically when executing `npm run dev`
+> **Note:** The first load takes a few seconds while WebAssembly modules are fetched. Subsequent operations are fast.
 
-This approach keeps the repository size small while making it easy for developers to get started.
+## How It Works
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to use the application.
+```
+Browser
+  └── Next.js (SSR disabled for DuckDB compatibility)
+        └── DuckDB-WASM (WebAssembly)
+              └── In-memory SQL database
+                    └── todos table (BIGINT id, TEXT, BOOLEAN)
+```
+
+DuckDB is initialized as a singleton on the client side. All SQL operations use **prepared statements** to prevent injection. The singleton pattern ensures a single database connection is shared across the app.
+
+## Key Implementation Points
+
+- **`src/services/duckDbStorage.ts`** — DuckDB singleton with `initialize()`, CRUD via prepared statements
+- **`src/pages/index.tsx`** — SSR disabled via `next/dynamic` (`{ ssr: false }`)
+- **`setup-duckdb.js`** — downloads WASM binaries from jsDelivr CDN to `public/duckdb-wasm/`
 
 ## Running Tests
 
 ```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode (useful during development)
-npm run test:watch
+npm test              # run all tests
+npm run test:watch    # watch mode
 ```
 
-## Data Structure
-
-TODO data is stored with the following SQL table structure:
-
-```sql
-CREATE TABLE todos (
-  id INTEGER PRIMARY KEY,
-  text TEXT NOT NULL,
-  done BOOLEAN DEFAULT FALSE
-);
-```
-
-## Features
-
-- Add TODO items
-- Delete TODO items
-- Edit TODO items
-- Toggle TODO completion status
+Tests cover both the UI component (mocked storage) and the storage service (SQL verification via low-level mock).
 
 ## Project Structure
 
 ```
-/
-├── src/                # Source code root directory
-│   ├── pages/          # Next.js routing pages
-│   ├── components/     # Reusable UI components
-│   ├── services/       # Services like data storage
-│   └── types/          # TypeScript type definitions
-├── public/             # Static files
-├── docs/               # Project documentation
-└── __tests__/          # Test files
+src/
+├── pages/index.tsx          # Entry point (SSR disabled)
+├── components/
+│   └── TodoAppComponent.tsx # Main UI
+├── services/
+│   └── duckDbStorage.ts     # DuckDB-WASM singleton
+└── types/
+    └── todo.ts              # Interfaces
+__tests__/
+├── TodoAppComponent.test.tsx
+└── duckDbStorage.test.ts    # Verifies actual SQL and parameter binding
 ```
 
-## Documentation
+## Further Reading
 
-For detailed documentation about the project, refer to the following files:
-
-- [Architecture Overview](docs/duck-wasm-schema.md) - Application structure and data flow
-- [TypeScript and Next.js Learning Guide](docs/typescript-nextjs-learning-guide.md) - Basic concepts of TypeScript and Next.js
-- [Architecture Schema](docs/typescript-nextjs-schema.md) - Mermaid diagrams to visually understand the project architecture
-- [Troubleshooting Guide](docs/troubleshooting-guide.md) - Potential issues and solutions
-
-## Type Definitions
-
-TypeScript type definitions are implemented as follows:
-
-```typescript
-// Todo type
-export interface Todo {
-  id: number;
-  text: string;
-  done: boolean;
-}
-
-// Storage service interface
-export interface StorageService {
-  initialize: () => Promise<void>;
-  getAllTodos: () => Promise<Todo[]>;
-  addTodo: (todo: Todo) => Promise<boolean>;
-  deleteTodo: (id: number) => Promise<boolean>;
-  updateTodo: (todo: Todo) => Promise<boolean>;
-  close: () => Promise<void>;
-}
-```
-
-## Performance
-
-DuckDB-WASM may take some time to load initially because it loads WebAssembly modules. However, once loaded, subsequent operations run smoothly.
+- [Architecture Overview](docs/duck-wasm-schema.md)
+- [Troubleshooting Guide](docs/troubleshooting-guide.md)
