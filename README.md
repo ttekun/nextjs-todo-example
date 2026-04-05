@@ -1,5 +1,11 @@
 # DuckDB-WASM × Next.js Demo
 
+[![License: MIT](https://img.shields.io/github/license/ttekun/duckdb-wasm-nextjs-demo)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![DuckDB-WASM](https://img.shields.io/badge/DuckDB--WASM-1.28-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/docs/api/wasm/overview)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+
 > Run SQL in the browser — fully client-side data storage with no backend required.
 
 This project demonstrates how to integrate **DuckDB-WASM** into a Next.js application. All data is stored and queried via SQL directly in the browser using WebAssembly. No server, no database connection, no cloud — just the browser.
